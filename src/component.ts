@@ -4,10 +4,19 @@ import { Bot } from "./bot.js";
 import { Loggable } from "./logutils.js";
 
 const typeKey = Symbol("type");
+
+/**
+ * Decorator for events the component should listen to.
+ * 
+ * @param type Event
+ */
 export function name(type: Events) {
     return Reflect.metadata(typeKey, type);
 }
 
+/**
+ * Adds functionality to bots.
+ */
 export abstract class Component<TUser, TBot extends Bot<TUser>> extends Loggable {
     public readonly bot: TBot;
 
@@ -28,8 +37,17 @@ export abstract class Component<TUser, TBot extends Bot<TUser>> extends Loggable
         }
     }
 
+    /**
+     * Refreshes datamaps.
+     * @experimental
+     * 
+     * @see DataMapper
+     */
     public async refreshDatamaps() { };
 
+    /**
+     * Called on bot login.
+     */
     public init(): Awaitable<void> { };
 
     @name(Events.MessageCreate)

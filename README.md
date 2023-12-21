@@ -10,4 +10,6 @@ The separation has resulted in many *interesting* generic shenanigans in order t
 
 ## Usage
 
+Check out an [example](https://github.com/kinderhead/mssmbot) bot. Documentation is available [here](https://kinderhead.github.io/botinator/)
+
 TBA

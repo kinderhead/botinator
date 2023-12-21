@@ -3,6 +3,13 @@ import { diffChars } from "diff";
 import { APIEmbed, APIEmbedField, APIModalInteractionResponseCallbackData, ActionRowBuilder, AnyComponentBuilder, AutocompleteInteraction, AwaitModalSubmitOptions, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ComponentType, EmbedBuilder, GuildMember, InteractionReplyOptions, InteractionResponse, JSONEncodable, Message, MessagePayload, ModalActionRowComponentBuilder, ModalBuilder, ModalComponentData, ModalSubmitInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, StringSelectMenuOptionBuilder, TextInputStyle, WebhookMessageEditOptions } from "discord.js";
 import { LOG_CONFIG } from "./bot.js";
 
+/**
+ * Creates nice diff messages. Useful for edit logs.
+ * 
+ * @param a First
+ * @param b Second
+ * @returns Diff
+ */
 export function discordDiff(a: string, b: string) {
     a = a || "";
     b = b || "";
@@ -22,6 +29,16 @@ export function discordDiff(a: string, b: string) {
     return res;
 }
 
+/**
+ * Gets around the embed field limit by spreading the fields out using an embed pager.
+ * 
+ * @param base Base embed
+ * @param fields Fields
+ * @param chunkSize Fields per embed
+ * @param msg Interaction
+ * 
+ * @see embedPager
+ */
 export async function expandAndHandleEmbed(base: EmbedBuilder, fields: APIEmbedField[], chunkSize: number, msg: InteractionSendable) {
     const pages = [];
 
@@ -41,6 +58,16 @@ export function escapeMarkdown(text: string) {
     return escaped;
 }
 
+/**
+ * Allows for embeds to be arranged in a list for users to sift through.
+ * 
+ * @param pages Embeds
+ * @param msg Interaction
+ * @param ephemeral Should be ephemeral or not
+ * @param content Optional content to be added to the message
+ * @param additionalButtons Adds extra buttons to the message
+ * @param callbacks Custom id indexed dictionary of button callbacks. This will be changed at some point to use {@link QuickButton} instead.
+ */
 export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable, ephemeral: boolean = false, content: string = "", additionalButtons: ButtonBuilder[] = [], callbacks: { [name: string]: (page: number, interaction: ButtonInteraction) => boolean | Promise<boolean> } = {}) {
     var pageIndex = 0;
 
@@ -111,7 +138,25 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
     });
 }
 
+/**
+ * Setting utility type
+ * 
+ * @see settingsHelper
+ */
 export type SettingsArgType<T> = { default: T, name: string, desc: string, on_change: (i: T) => void | Promise<void | any> };
+
+/**
+ * @beta
+ * A handy utility for users to change values. Only supports booleans and strings right now.
+ * 
+ * @param user User
+ * @param msg Interaction
+ * @param embed Base embed
+ * @param options Options and callbacks
+ * @param ephemeral Ephemeral or not
+ * 
+ * @see SettingsArgType
+ */
 export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | SettingsArgType<string>)[], ephemeral: boolean = true) {
     var custom = createCustomId();
     var doneId = createCustomId();
@@ -175,6 +220,19 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
     }
 }
 
+/**
+ * Quickly asks a user for a string.
+ * 
+ * @param title Title
+ * @param label Label
+ * @param def Default
+ * @param style Style
+ * @param int Interaction
+ * @param max Max character length
+ * @returns The inputted text
+ * 
+ * @see quickMultiModal
+ */
 export async function quickModal(title: string, label: string, def: string, style: TextInputStyle, int: { showModal: (modal: APIModalInteractionResponseCallbackData | ModalComponentData | JSONEncodable<APIModalInteractionResponseCallbackData>) => Promise<void>, awaitModalSubmit: (options: AwaitModalSubmitOptions<ModalSubmitInteraction<CacheType>>) => Promise<ModalSubmitInteraction<CacheType>> }, max: number = 4000) {
     //var placeholder = shorten(def);
 
@@ -198,6 +256,21 @@ export async function quickModal(title: string, label: string, def: string, styl
     }
 }
 
+/**
+ * Quickly asks a user for two strings.
+ * 
+ * @param title Title
+ * @param label1 First label
+ * @param def1 First default
+ * @param label2 Second label
+ * @param def2 Second default
+ * @param int Interaction
+ * @param max1 First max length
+ * @param max2 Second max length
+ * @returns The strings as a tuple
+ * 
+ * @see quickModal
+ */
 export async function quickMultiModal(title: string, label1: string, def1: string, label2: string, def2: string, int: { showModal: (modal: APIModalInteractionResponseCallbackData | ModalComponentData | JSONEncodable<APIModalInteractionResponseCallbackData>) => Promise<void>, awaitModalSubmit: (options: AwaitModalSubmitOptions<ModalSubmitInteraction<CacheType>>) => Promise<ModalSubmitInteraction<CacheType>> }, max1: number = 4000, max2: number = 4000): Promise<[string, string]> {
     try {
         //var placeholder1 = shorten(def1);
@@ -229,7 +302,23 @@ export async function quickMultiModal(title: string, label1: string, def1: strin
     }
 }
 
+/**
+ * Utility type for {@link buttonHelper}.
+ * 
+ * @see buttonHelper
+ */
 export type ButtonHelperCallback<T> = (int: ButtonInteraction) => T | Promise<T>;
+
+/**
+ * A utility for giving the user a choice to do something.
+ * 
+ * @param base Base embed
+ * @param buttons Buttons
+ * @param msg Interaction
+ * @param ephemeral Ephemeral or not
+ * @param allowedId Only allow a certain user to press buttons
+ * @returns The value gotten from the button callback
+ */
 export async function buttonHelper<T = void>(base: EmbedBuilder, buttons: ([QuickButton, ButtonHelperCallback<T>])[], msg: InteractionSendable, ephemeral: boolean = true, allowedId: string = "") {
     const pages = [];
     const cbmap: { [id: string]: ButtonHelperCallback<T> } = {};
@@ -262,7 +351,14 @@ export async function buttonHelper<T = void>(base: EmbedBuilder, buttons: ([Quic
     return await cbmap[choice.customId](choice);
 }
 
+/**
+ * @beta
+ */
 export type SelectHelperCallback<T> = (int: StringSelectMenuInteraction) => T | Promise<T>;
+
+/**
+ * @beta
+ */
 export async function selectHelper<T = void>(base: EmbedBuilder, options: { [opt: string]: SelectHelperCallback<T> }, msg: InteractionSendable, ephemeral: boolean = true) {
     const menuId = createCustomId();
     const menu = new StringSelectMenuBuilder()
@@ -280,10 +376,23 @@ export async function selectHelper<T = void>(base: EmbedBuilder, options: { [opt
     return await options[Object.keys(options)[parseInt(int.values[0])]](int);
 }
 
+/**
+ * Short hand for creating an action row.
+ * 
+ * @param components Components
+ * @returns The action row
+ */
 export function quickActionRow<T extends AnyComponentBuilder>(...components: T[]) {
     return new ActionRowBuilder<T>().addComponents(components);
 }
 
+/**
+ * Clamps a string to a max length and adds "..." at the end if it is too long.
+ * 
+ * @param str String
+ * @param length Max length
+ * @returns Shortened string
+ */
 export function shorten(str: string, length: number = 100) {
     var short = str;
     if (short.length >= length) return short.substring(0, length - 3) + "...";
@@ -300,6 +409,12 @@ export function isValidUrl(urlString: string) {
     return !!urlPattern.test(urlString);
 }
 
+/**
+ * Utility for handling autocomplete.
+ * 
+ * @param cmd Autocomplete interaction
+ * @param choices Choices
+ */
 export async function autocompleteOptions(cmd: AutocompleteInteraction<CacheType>, choices: string[]) {
     const focusedValue = cmd.options.getFocused();
     const filtered = choices.filter(choice => choice.startsWith(focusedValue));
@@ -315,6 +430,12 @@ export function getNextDayOfWeek(date: Date, dayOfWeek: number) {
     return date;
 }
 
+/**
+ * Gets the object's values.
+ * 
+ * @param obj Object
+ * @returns Object's values
+ */
 export function values<T>(obj: { [key: number | string]: T }) {
     var array: T[] = [];
     for (const key in obj) {
@@ -351,8 +472,19 @@ export function getFunctionArgs(originalFunc: Function): null | string[] {
 
 export var createCustomId = () => Math.random().toString();
 
+/**
+ * Any function that can send a message-like object.
+ * 
+ * @example
+ * ```ts
+ * msg.reply.bind(msg)
+ * ```
+ */
 export type InteractionSendable = (content: string | MessagePayload | InteractionReplyOptions) => Promise<InteractionResponse | Message>;
 
+/**
+ * Quick button.
+ */
 export interface QuickButton {
     label: string;
     style: ButtonStyle;

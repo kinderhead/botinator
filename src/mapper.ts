@@ -1,5 +1,10 @@
 import { Loggable } from "./logutils.js";
 
+/**
+ * An advanced data mapper.
+ * 
+ * @experimental
+ */
 export abstract class DataMapper<TBot, TOriginal extends { id: string | number }> extends Loggable {
     public bot: TBot;
 

@@ -12,6 +12,11 @@ export const LOG_CONFIG = {
 
 export const DEBUG = process.argv.includes("--debug");
 
+/**
+ * The heart of your bot. Subclass this to get started.
+ * 
+ * @typeParam TUser The default user object
+ */
 export abstract class Bot<TUser = GuildMember> {
     private clientID: string;
     private secret: string;
@@ -27,6 +32,13 @@ export abstract class Bot<TUser = GuildMember> {
 
     public hasStarted = false;
 
+    /**
+     * Create a bot.
+     * 
+     * @param clientID Client ID (unused right now)
+     * @param secret Bot secret
+     * @param client Base Discord client with intentions set
+     */
     public constructor(clientID: string, secret: string, client: Client) {
         this.client = client;
         this.clientID = clientID;
@@ -69,12 +81,23 @@ export abstract class Bot<TUser = GuildMember> {
         this.client.on(Events.Error, e => { this.log.fatal(e); });
     }
 
+    /**
+     * Runs right before the client logs in.
+     */
     protected abstract init(): void;
 
+    /**
+     * Register a command. Has some typing issues right now.
+     * 
+     * @param command Command to register
+     */
     public registerCommand(command: Command<TUser, this>) {
         this.commands.push(command);
     }
 
+    /**
+     * Start the bot.
+     */
     public async run() {
         this.init();
 
@@ -85,6 +108,11 @@ export abstract class Bot<TUser = GuildMember> {
         }
     }
 
+    /**
+     * Runs after the bot logs in.
+     * 
+     * @param c Client
+     */
     public async onLogin(c: Client) {
         this.log.info("Logging in");
         this.log.silly("Bot in " + this.client.guilds.cache.size + " servers");
@@ -96,10 +124,32 @@ export abstract class Bot<TUser = GuildMember> {
         this.hasStarted = true;
     }
 
+    /**
+     * Runs when a user joins.
+     * 
+     * @param user User
+     */
     public async onNewMember(user: GuildMember) { }
+
+    /**
+     * Runs when a user leaves.
+     * 
+     * @param user User
+     */
     public async onMemberLeave(user: GuildMember | PartialGuildMember) { }
+
+    /**
+     * Runs when a message is sent.
+     * 
+     * @param msg Message
+     */
     public async onMessage(msg: Message) { }
 
+    /**
+     * Runs when there is an interaction.
+     * 
+     * @param message Interaction
+     */
     public async onInteraction(message: Interaction) {
         if (message.isAutocomplete() || message.isChatInputCommand()) {
             const cmd = this.commands.find(i => i.getName() == message.commandName);
@@ -126,12 +176,45 @@ export abstract class Bot<TUser = GuildMember> {
         }
     }
 
+    /**
+     * @beta
+     * Gets a user by its id. This will eventually be renamed to `getUser`.
+     * 
+     * @param id User id
+     */
     public abstract getUserV2(id: string): TUser;
 
+    /**
+     * Runs right before the application quits.
+     */
     public async onClose() {
 
     }
 
+    /**
+     * Refreshes commands for all servers.
+     * 
+     * It is recommended to hook this up to a command.
+     * @example
+     * ```ts
+     * export default class RefreshCommand<TUser, TBot<TUser>> extends Command<TUser, TBot<TUser>> {
+     *      public getName() { return "refresh"; }
+     *
+     *      public create() {
+     *          return new SlashCommandBuilder()
+     *              .setName(this.getName())
+     *              .setDescription("Refresh commands")
+     *              .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
+     *      }
+     *
+     *      public async execute(msg: ChatInputCommandInteraction<CacheType>) {
+     *          await msg.deferReply();
+     *          await this.bot.refreshCommands();
+     *          await msg.editReply("Refreshed commands");
+     *      }
+     * }
+     * ```
+     */
     public async refreshCommands() {
         const cmds: (SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">)[] = [];
 
@@ -146,6 +229,12 @@ export abstract class Bot<TUser = GuildMember> {
         this.log.info("Refreshed commands");
     }
 
+    /**
+     * Gets a channel by id.
+     * 
+     * @param id Channel id
+     * @returns Channel
+     */
     public getChannel<T extends GuildBasedChannel = TextChannel>(id: string): T {
         for (const i of this.client.guilds.cache.values()) {
             var ret = i.channels.cache.get(id) as T;
@@ -157,6 +246,15 @@ export abstract class Bot<TUser = GuildMember> {
         throw new Error("Unable to find channel with id " + id);
     }
 
+    /**
+     * Checks to see if a user is in any of the servers this bot is in.
+     * 
+     * @remarks
+     * It is recommended to only use this if this bot is only in one server.
+     * 
+     * @param id User id
+     * @returns If the user is in a server
+     */
     public userExists(id: string) {
         for (const i of this.client.guilds.cache.values()) {
             if (i.members.cache.has(id)) return true;
@@ -165,6 +263,12 @@ export abstract class Bot<TUser = GuildMember> {
         return false;
     }
 
+    /**
+     * Gets a role by an id.
+     * 
+     * @param id Role id
+     * @returns Role
+     */
     public getRole(id: string): Role {
         for (const i of this.client.guilds.cache.values()) {
             if (i.roles.cache.has(id)) {

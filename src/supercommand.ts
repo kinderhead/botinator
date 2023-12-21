@@ -49,6 +49,11 @@ export function cmd<T extends Function>(description: string) {
     }
 }
 
+/**
+ * Another way to create commands.
+ * 
+ * @alpha
+ */
 export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Command<TUser, TBot> {
     private cmdBuilder: SlashCommandBuilder;
 
