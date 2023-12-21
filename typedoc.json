@@ -1,0 +1,11 @@
+{
+    "entryPoints": [
+        "src"
+    ],
+    "out": "docs",
+    "plugin": [
+        "typedoc-plugin-djs-links",
+        "typedoc-theme-hierarchy"
+    ],
+    "theme": "hierarchy"
+}
