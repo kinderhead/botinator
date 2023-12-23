@@ -1,4 +1,4 @@
-import { Client, Events, GuildBasedChannel, GuildMember, Interaction, Message, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, roleMention } from "discord.js";
+import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, roleMention } from "discord.js";
 import util from 'node:util';
 import { RotatingFileStream, createStream } from "rotating-file-stream";
 import { ILogObj, Logger } from "tslog";
@@ -27,8 +27,8 @@ export abstract class Bot<TUser = GuildMember> {
     public logChannel: TextChannel;
     public errorPing: Role;
 
-    public components: Component<TUser, this>[] = [];
-    public commands: Command<TUser, this>[] = [];
+    public components: Component<TUser, Bot<TUser>>[] = [];
+    public commands: Command<TUser, Bot<TUser>>[] = [];
 
     public hasStarted = false;
 
@@ -77,6 +77,7 @@ export abstract class Bot<TUser = GuildMember> {
         this.client.on(Events.MessageCreate, this.onMessage.bind(this));
         this.client.on(Events.GuildMemberAdd, this.onNewMember.bind(this));
         this.client.on(Events.GuildMemberRemove, this.onMemberLeave.bind(this));
+        this.client.on(Events.GuildCreate, this.onGuildJoin.bind(this));
 
         this.client.on(Events.Error, e => { this.log.fatal(e); });
     }
@@ -87,11 +88,11 @@ export abstract class Bot<TUser = GuildMember> {
     protected abstract init(): void;
 
     /**
-     * Register a command. Has some typing issues right now.
+     * Register a command.
      * 
      * @param command Command to register
      */
-    public registerCommand(command: Command<TUser, this>) {
+    public registerCommand(command: Command<TUser, Bot<TUser>>) {
         this.commands.push(command);
     }
 
@@ -139,6 +140,13 @@ export abstract class Bot<TUser = GuildMember> {
     public async onMemberLeave(user: GuildMember | PartialGuildMember) { }
 
     /**
+     * Runs when the bot joins a guild.
+     * 
+     * @param guild Guild
+     */
+    public async onGuildJoin(guild: Guild) { }
+
+    /**
      * Runs when a message is sent.
      * 
      * @param msg Message
@@ -162,7 +170,7 @@ export abstract class Bot<TUser = GuildMember> {
                 await cmd.autocomplete(message);
             } else if (message.isChatInputCommand()) {
                 try {
-                    await cmd.execute(message, this.getUserV2(message.user.id));
+                    await cmd.execute(message, this.getUserV2(message.user.id, message.guildId));
                 } catch (error) {
                     this.log.error(error);
                     try {
@@ -182,7 +190,7 @@ export abstract class Bot<TUser = GuildMember> {
      * 
      * @param id User id
      */
-    public abstract getUserV2(id: string): TUser;
+    public getUserV2(id: string, guild: string = ""): TUser { throw new Error("Get user is undefined"); };
 
     /**
      * Runs right before the application quits.
@@ -223,6 +231,7 @@ export abstract class Bot<TUser = GuildMember> {
         });
 
         this.client.guilds.cache.forEach(async i => {
+            await i.commands.set([]);
             await i.commands.set(cmds);
         });
 

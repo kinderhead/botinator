@@ -118,7 +118,7 @@ export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Comma
             if (i.type === String) {
                 out.push(msg.options.getString(i.name));
             } else {
-                out.push(this.bot.getUserV2(msg.options.getUser(i.name).id));
+                out.push(this.bot.getUserV2(msg.options.getUser(i.name).id, msg.guildId));
             }
         }
 
