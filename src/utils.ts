@@ -246,7 +246,7 @@ export async function quickModal(title: string, label: string, def: string, styl
         await int.showModal(modal);
 
         const res = await int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
-        res.deferReply().then(i => i.delete());
+        res.deferReply({ ephemeral: true }).then(i => i.delete());
 
         const str = res.fields.getTextInputValue(id);
         return str === "" ? def : str;
@@ -291,7 +291,7 @@ export async function quickMultiModal(title: string, label1: string, def1: strin
         await int.showModal(modal);
 
         const res = await int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
-        res.deferReply().then(i => i.delete());
+        res.deferReply({ ephemeral: true }).then(i => i.delete());
 
         const str1 = res.fields.getTextInputValue(id1);
         const str2 = res.fields.getTextInputValue(id2);

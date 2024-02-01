@@ -230,8 +230,9 @@ export abstract class Bot<TUser = GuildMember> {
             cmds.push(i.create());
         });
 
+        this.client.application.commands.set([]);
+
         this.client.guilds.cache.forEach(async i => {
-            await i.commands.set([]);
             await i.commands.set(cmds);
         });
 
