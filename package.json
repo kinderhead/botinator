@@ -6,7 +6,9 @@
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "type": "module",
-    "scripts": {},
+    "scripts": {
+        "build": "npx tsup"
+    },
     "files": [
         "dist"
     ],

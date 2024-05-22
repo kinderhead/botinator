@@ -3,7 +3,7 @@ import util from 'node:util';
 import { RotatingFileStream, createStream } from "rotating-file-stream";
 import { ILogObj, Logger } from "tslog";
 import { Component } from "./component.js";
-import { Command } from "./command.js";
+import { Command, CommandBuilderTypes } from "./command.js";
 
 export const LOG_CONFIG = {
     DEFAULT_LOGGER: new Logger<ILogObj>({ name: "Bot", type: "pretty", hideLogPositionForProduction: false, prettyLogTimeZone: "local", minLevel: 2, prettyLogTemplate: "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}} {{fileNameWithLine}}\t{{logLevelName}}\t[{{name}}] " }),
@@ -224,7 +224,7 @@ export abstract class Bot<TUser = GuildMember> {
      * ```
      */
     public async refreshCommands() {
-        const cmds: (SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">)[] = [];
+        const cmds: CommandBuilderTypes[] = [];
 
         this.commands.forEach(i => {
             cmds.push(i.create());

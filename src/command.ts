@@ -1,6 +1,8 @@
-import { AutocompleteInteraction, CacheType, ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from "discord.js";
+import { AutocompleteInteraction, CacheType, ChatInputCommandInteraction, SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from "discord.js";
 import { Bot } from "./bot.js";
 import { Loggable } from "./logutils.js";
+
+export type CommandBuilderTypes = SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder | SlashCommandOptionsOnlyBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
 
 /**
  * The base class for creating commands.
@@ -22,7 +24,7 @@ export abstract class Command<TUser, TBot extends Bot<TUser>> extends Loggable {
      * 
      * @returns The command
      */
-    public abstract create(): SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
+    public abstract create(): CommandBuilderTypes;
     
     /**
      * Runs when the command is run.
