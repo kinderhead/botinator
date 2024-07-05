@@ -70,9 +70,9 @@ export abstract class DataMapper<TBot, TOriginal extends { id: string | number }
     }
 
     protected async checkForRefresh() {
-        if (Date.now() > this.timeSinceLastReload.getTime() + (5 * 60000)) {
+        if (Date.now() > this.timeSinceLastReload.getTime() + (60 * 60000)) {
             this.timeSinceLastReload = new Date();
-            this.log.debug("Refreshing a " + this.constructor.name + " with id " + this.obj.id);
+            //this.log.debug("Refreshing a " + this.constructor.name + " with id " + this.obj.id);
             await this.reload();
         }
     }
