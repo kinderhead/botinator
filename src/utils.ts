@@ -143,7 +143,7 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
  * 
  * @see settingsHelper
  */
-export type SettingsArgType<T> = { default: T, name: string, desc: string, on_change: (i: T) => void | Promise<void | any> };
+export type SettingsArgType<T> = { default: T, name: string, desc: string, on_change: (i: T) => void | Promise<void | any>, validate?: (i: T) => boolean };
 
 /**
  * @beta
@@ -157,7 +157,7 @@ export type SettingsArgType<T> = { default: T, name: string, desc: string, on_ch
  * 
  * @see SettingsArgType
  */
-export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | SettingsArgType<string>)[], ephemeral: boolean = true) {
+export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | SettingsArgType<string> | SettingsArgType<number>)[], ephemeral: boolean = true) {
     var custom = createCustomId();
     var doneId = createCustomId();
 
@@ -165,18 +165,25 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
     var message: InteractionResponse | Message = undefined;
 
     while (true) {
-        embed.setFields(...options.map(i => {
-            if (typeof i.default === "boolean") {
-                return { name: i.name + ": " + i.default, value: i.desc, inline: true };
-            } else if (typeof i.default === "string") {
-                return { name: i.name, value: i.default, inline: true };
-            }
-        }));
+        function setFields()
+        {
+            embed.setFields(...options.map(i => {
+                if (typeof i.default === "boolean") {
+                    return { name: i.name + ": " + i.default, value: i.desc, inline: true };
+                } else if (typeof i.default === "string") {
+                    return { name: i.name + ": " + i.default, value: i.desc, inline: true };
+                } else if (typeof i.default === "number") {
+                    return { name: i.name + ": " + i.default.toString(), value: i.desc, inline: true };
+                }
+            }));
+        }
+
+        setFields();
 
         var row = quickActionRow(...options.map(i => {
             if (typeof i.default === "boolean") {
                 return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Toggle ${i.name.toLowerCase()}`).setStyle(i.default ? ButtonStyle.Success : ButtonStyle.Danger);
-            } else if (typeof i.default === "string") {
+            } else {
                 return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Set ${i.name.toLowerCase()}`).setStyle(ButtonStyle.Primary);
             }
         }));
@@ -210,8 +217,19 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
                     i.default = !i.default;
                     await i.on_change(i.default);
                 } else if (typeof i.default === "string") {
-                    i.default = await quickModal(`Set ${i.name.toLowerCase()}`, "Value", i.default, TextInputStyle.Paragraph, int);
-                    await i.on_change(i.default);
+                    await cancelSafeQuickModal(`Set ${i.name.toLowerCase()}`, "Value", i.default, TextInputStyle.Paragraph, int, async val => {
+                        i.default = val;
+                        await i.on_change(i.default);
+                        setFields();
+                        await int.editReply({ embeds: [embed], components: [row] });
+                    }, 1000, i.validate);
+                } else if (typeof i.default === "number") {
+                    await cancelSafeQuickModal(`Set ${i.name.toLowerCase()}`, "Value", i.default.toString(), TextInputStyle.Short, int, async val => {
+                        i.default = Number.parseFloat(val);
+                        await i.on_change(i.default);
+                        setFields();
+                        await int.editReply({ embeds: [embed], components: [row] });
+                    }, 15, str => i.validate(Number.parseFloat(str)));
                 }
 
                 break;
@@ -228,12 +246,13 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
  * @param def Default
  * @param style Style
  * @param int Interaction
- * @param max Max character length
+ * @param max Optional, max character length
+ * @param validate Optional, validate input. If false then function returns `def`
  * @returns The inputted text
  * 
  * @see quickMultiModal
  */
-export async function quickModal(title: string, label: string, def: string, style: TextInputStyle, int: { showModal: (modal: APIModalInteractionResponseCallbackData | ModalComponentData | JSONEncodable<APIModalInteractionResponseCallbackData>) => Promise<void>, awaitModalSubmit: (options: AwaitModalSubmitOptions<ModalSubmitInteraction<CacheType>>) => Promise<ModalSubmitInteraction<CacheType>> }, max: number = 4000) {
+export async function quickModal(title: string, label: string, def: string, style: TextInputStyle, int: { showModal: (modal: APIModalInteractionResponseCallbackData | ModalComponentData | JSONEncodable<APIModalInteractionResponseCallbackData>) => Promise<void>, awaitModalSubmit: (options: AwaitModalSubmitOptions<ModalSubmitInteraction<CacheType>>) => Promise<ModalSubmitInteraction<CacheType>> }, max: number = 4000, validate: (i: string) => boolean = i => true) {
     //var placeholder = shorten(def);
 
     try {
@@ -246,13 +265,65 @@ export async function quickModal(title: string, label: string, def: string, styl
         await int.showModal(modal);
 
         const res = await int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
-        res.deferReply({ ephemeral: true }).then(i => i.delete());
-
         const str = res.fields.getTextInputValue(id);
+
+        if (validate(str)) res.deferReply({ ephemeral: true }).then(i => i.delete());
+        else {
+            res.reply({ ephemeral: true, content: "Invalid format" });
+            return def;
+        }
+        
         return str === "" ? def : str;
     } catch (e) {
         console.error(e);
         return def;
+    }
+}
+
+/**
+ * Cancel proof {@link quickModal}
+ * 
+ * @param title Title
+ * @param label Label
+ * @param def Default
+ * @param style Style
+ * @param int Interaction
+ * @param callback Callback
+ * @param max Optional, max character length
+ * @param validate Optional, validate input. If false then function returns `def`
+ * @returns The inputted text
+ * 
+ * @see quickModal
+ */
+export async function cancelSafeQuickModal(title: string, label: string, def: string, style: TextInputStyle, int: { showModal: (modal: APIModalInteractionResponseCallbackData | ModalComponentData | JSONEncodable<APIModalInteractionResponseCallbackData>) => Promise<void>, awaitModalSubmit: (options: AwaitModalSubmitOptions<ModalSubmitInteraction<CacheType>>) => Promise<ModalSubmitInteraction<CacheType>> }, callback: (i: string) => Promise<void> | void, max: number = 4000, validate: (i: string) => boolean = i => true) {
+    //var placeholder = shorten(def);
+
+    try {
+        var modalId = createCustomId();
+        var id = createCustomId();
+        const modal = new ModalBuilder().setTitle(title).setCustomId(modalId).addComponents(
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(new TextInputBuilder().setCustomId(id).setLabel(label).setValue(def).setStyle(style).setMaxLength(max).setRequired(false))
+        );
+
+        await int.showModal(modal);
+
+        var promise = int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
+        (async () => {
+            const res = await promise;
+            const str = res.fields.getTextInputValue(id);
+
+            if (validate(str)) {
+                res.deferReply({ ephemeral: true }).then(i => i.delete());
+                await callback(str === "" ? def : str);
+            }
+            else {
+                res.reply({ ephemeral: true, content: "Invalid format" });
+                await callback(def);
+            }
+        })();
+    } catch (e) {
+        console.error(e);
+        await callback(def);
     }
 }
 

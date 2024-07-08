@@ -10,6 +10,9 @@ export interface SuperCommandArg {
     description: string;
     required: boolean;
     type: any;
+
+    min?: number;
+    max?: number;
 }
 
 export interface SuperCommandRoute {
@@ -25,6 +28,16 @@ export function param(description: string, required: boolean = true) {
         var argData: SuperCommandArg[] = Reflect.getOwnMetadata(argsKey, target, propertyKey) || [];
         const args = getFunctionArgs(target[propertyKey] as Function);
         argData.push({ index: parameterIndex, description, required, name: args[parameterIndex], type: Reflect.getMetadata("design:paramtypes", target, propertyKey)[parameterIndex] });
+        Reflect.defineMetadata(argsKey, argData, target, propertyKey);
+    };
+}
+
+export function numberParam(description: string, min: number, max: number, required: boolean = true) {
+    return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
+        var argData: SuperCommandArg[] = Reflect.getOwnMetadata(argsKey, target, propertyKey) || [];
+        const args = getFunctionArgs(target[propertyKey] as Function);
+        if (Reflect.getMetadata("design:paramtypes", target, propertyKey)[parameterIndex] != Number) throw new TypeError("Argument is not of type number");
+        argData.push({ index: parameterIndex, description, required, name: args[parameterIndex], type: Number, min, max });
         Reflect.defineMetadata(argsKey, argData, target, propertyKey);
     };
 }
@@ -56,6 +69,7 @@ export function cmd<T extends Function>(description: string) {
  */
 export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Command<TUser, TBot> {
     private cmdBuilder: SlashCommandBuilder;
+    protected caller: TUser;
 
     public routes: SuperCommandRoute[] = [];
 
@@ -71,6 +85,8 @@ export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Comma
         for (const i of route.args) {
             if (i.type === String) {
                 cmd.addStringOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required));
+            } else if (i.type === Number) {
+                cmd.addNumberOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required).setMinValue(i.min).setMaxValue(i.max));
             } else {
                 cmd.addUserOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required));
             }
@@ -107,6 +123,7 @@ export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Comma
 
         const route = this.routes.find(i => i.name === subcmd);
         if (route) {
+            this.caller = this.bot.getUserV2(msg.user.id, msg.guildId);
             await route.func.call(this, msg, ...this.processArgs(msg, route.args));
         }
     }
@@ -117,6 +134,8 @@ export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Comma
         for (const i of args) {
             if (i.type === String) {
                 out.push(msg.options.getString(i.name));
+            } else if (i.type === Number) {
+                out.push(msg.options.getNumber(i.name));
             } else {
                 out.push(this.bot.getUserV2(msg.options.getUser(i.name).id, msg.guildId));
             }
