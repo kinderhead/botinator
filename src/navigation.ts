@@ -27,7 +27,7 @@ export class CustomLinkButton extends CustomButton {
     }
 
     public override build() {
-        return new ButtonBuilder().setLabel(this.label).setStyle(this.style).setURL(this.link).setCustomId(this.customId);
+        return new ButtonBuilder().setLabel(this.label).setStyle(this.style).setURL(this.link);
     }
 }
 
