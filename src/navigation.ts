@@ -2,10 +2,10 @@ import { ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteract
 import { createCustomId, quickActionRow } from "./utils.js";
 
 export class CustomButton {
-    public label: string;
-    public style: ButtonStyle;
-    public onClick: (msg: ButtonInteraction) => any;
-    public customId = createCustomId();
+    public readonly label: string;
+    public readonly style: ButtonStyle;
+    public readonly onClick: (msg: ButtonInteraction) => any;
+    public readonly customId = createCustomId();
 
     constructor(label: string, style: ButtonStyle, onClick: (msg: ButtonInteraction) => Promise<void> | void) {
         this.label = label;
@@ -15,6 +15,19 @@ export class CustomButton {
 
     public build() {
         return new ButtonBuilder().setLabel(this.label).setStyle(this.style).setCustomId(this.customId);
+    }
+}
+
+export class CustomLinkButton extends CustomButton {
+    public readonly link: string;
+
+    constructor(label: string, link: string, onClick: (msg: ButtonInteraction) => Promise<void> | void) {
+        super(label, ButtonStyle.Link, onClick);
+        this.link = link;
+    }
+
+    public override build() {
+        return new ButtonBuilder().setLabel(this.label).setStyle(this.style).setURL(this.link).setCustomId(this.customId);
     }
 }
 
