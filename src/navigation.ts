@@ -21,8 +21,8 @@ export class CustomButton {
 export class CustomLinkButton extends CustomButton {
     public readonly link: string;
 
-    constructor(label: string, link: string, onClick: (msg: ButtonInteraction) => Promise<void> | void) {
-        super(label, ButtonStyle.Link, onClick);
+    constructor(label: string, link: string) {
+        super(label, ButtonStyle.Link, () => { });
         this.link = link;
     }
 
