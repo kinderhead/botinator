@@ -145,6 +145,8 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
  */
 export type SettingsArgType<T> = { default: T, name: string, desc: string, on_change: (i: T) => void | Promise<void | any>, validate?: (i: T) => boolean };
 
+export type StringSettingsArg = SettingsArgType<string> & { max?: number };
+
 /**
  * @beta
  * A handy utility for users to change values. Only supports booleans and strings right now.
@@ -157,7 +159,7 @@ export type SettingsArgType<T> = { default: T, name: string, desc: string, on_ch
  * 
  * @see SettingsArgType
  */
-export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | SettingsArgType<string> | SettingsArgType<number>)[], ephemeral: boolean = true) {
+export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | StringSettingsArg | SettingsArgType<number>)[], ephemeral: boolean = true) {
     var custom = createCustomId();
     var doneId = createCustomId();
 
@@ -168,13 +170,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
         function setFields()
         {
             embed.setFields(...options.map(i => {
-                if (typeof i.default === "boolean") {
-                    return { name: i.name + ": " + i.default, value: i.desc, inline: true };
-                } else if (typeof i.default === "string") {
-                    return { name: i.name + ": " + i.default, value: i.desc, inline: true };
-                } else if (typeof i.default === "number") {
-                    return { name: i.name + ": " + i.default.toString(), value: i.desc, inline: true };
-                }
+                return { name: i.name + ": " + i.desc, value: i.default.toString(), inline: true };
             }));
         }
 
@@ -222,7 +218,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
                         await i.on_change(i.default);
                         setFields();
                         await int.editReply({ embeds: [embed], components: [row] });
-                    }, 1000, i.validate);
+                    }, i.max ?? 2048, i.validate);
                 } else if (typeof i.default === "number") {
                     await cancelSafeQuickModal(`Set ${i.name.toLowerCase()}`, "Value", i.default.toString(), TextInputStyle.Short, int, async val => {
                         i.default = Number.parseFloat(val);

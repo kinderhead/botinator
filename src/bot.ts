@@ -170,14 +170,15 @@ export abstract class Bot<TUser = GuildMember> {
                 await cmd.autocomplete(message);
             } else if (message.isChatInputCommand()) {
                 try {
-                    await cmd.execute(message, this.getUserV2(message.user.id, message.guildId));
+                    if (message.inCachedGuild()) await cmd.execute(message, this.getUserV2(message.user.id, message.guildId));
+                    else await cmd.userlessExecute(message);
                 } catch (error) {
                     this.log.error(error);
                     try {
                         if (message.replied || message.deferred) await message.editReply("An error occured running this command");
                         else await message.reply({ content: "An error occured running this command", ephemeral: true });
                     } catch (e) {
-                        this.log.error("Error reporting error :(", e);
+                        
                     }
                 }
             }
@@ -186,7 +187,7 @@ export abstract class Bot<TUser = GuildMember> {
 
     /**
      * @beta
-     * Gets a user by its id. This will eventually be renamed to `getUser`.
+     * Gets a user by its id. This will eventually be renamed to `getUser` probably.
      * 
      * @param id User id
      */
@@ -224,19 +225,21 @@ export abstract class Bot<TUser = GuildMember> {
      * ```
      */
     public async refreshCommands() {
-        const cmds: CommandBuilderTypes[] = [];
+        const guildCmds: CommandBuilderTypes[] = [];
+        const globalCmds: CommandBuilderTypes[] = [];
 
         this.commands.forEach(i => {
-            cmds.push(i.create());
+            if (i.guildCommand()) guildCmds.push(i.create());
+            if (i.globalCommand()) globalCmds.push(i.create());
         });
 
-        this.client.application.commands.set([]);
+        await this.client.application.commands.set(globalCmds);
 
         this.client.guilds.cache.forEach(async i => {
-            await i.commands.set(cmds);
+            await i.commands.set(guildCmds);
         });
 
-        this.log.info("Refreshed commands");
+        this.log.info("Refreshed all commands");
     }
 
     /**

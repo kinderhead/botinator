@@ -25,6 +25,20 @@ export abstract class Command<TUser, TBot extends Bot<TUser>> extends Loggable {
      * @returns The command
      */
     public abstract create(): CommandBuilderTypes;
+
+    /**
+     * @returns If this command is a global command
+     */
+    public globalCommand() {
+        return false;
+    }
+
+    /**
+     * @returns If this command is a guild command
+     */
+    public guildCommand() {
+        return true;
+    }
     
     /**
      * Runs when the command is run.
@@ -33,6 +47,15 @@ export abstract class Command<TUser, TBot extends Bot<TUser>> extends Loggable {
      * @param user User who ran it
      */
     public abstract execute(msg: ChatInputCommandInteraction<CacheType>, user: TUser): Promise<void>;
+
+    /**
+     * Runs when the command is run only if the command is run in a DM or in a server without the bot
+     * 
+     * @param msg Command interaction
+     */
+    public async userlessExecute(msg: ChatInputCommandInteraction<CacheType>) {
+
+    }
 
     /**
      * Runs when an autocomplete interaction is called for this function.
