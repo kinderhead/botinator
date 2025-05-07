@@ -1,4 +1,4 @@
-import { AnyComponentBuilder, APIActionRowComponent, APIMessageActionRowComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionEditReplyOptions, InteractionResponse, MentionableSelectMenuBuilder, Message, MessageComponentInteraction, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder } from "discord.js";
+import { AnyComponentBuilder, APIActionRowComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionEditReplyOptions, InteractionResponse, MentionableSelectMenuBuilder, Message, MessageComponentInteraction, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder, APIButtonComponent } from "discord.js";
 import { createCustomId, quickActionRow } from "./utils.js";
 import { Loggable } from "./logutils.js";
 
@@ -149,7 +149,7 @@ export class Navigation {
             embeds: [page.getEmbed()],
             components: [
                 ...extras.map(i => quickActionRow(i.build()).toJSON())
-            ] as APIActionRowComponent<APIMessageActionRowComponent>[]
+            ] as APIActionRowComponent<APIButtonComponent>[]
         };
         if (buttons.length != 0) reply.components.push(quickActionRow(...buttons.map(i => i.build())).toJSON());
         if (buttons.length > 5) throw new Error("More than 5 buttons have not been implemented yet");
