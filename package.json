@@ -1,6 +1,6 @@
 {
-    "name": "botinator",
-    "version": "0.2.0",
+    "name": "discord-botinator",
+    "version": "0.2.1",
     "description": "",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
