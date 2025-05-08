@@ -1,13 +1,14 @@
 {
-    "name": "botinator",
-    "version": "0.2.0",
+    "name": "discord-botinator",
+    "version": "0.2.2",
     "description": "",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "build": "npx tsup"
+        "build": "npx tsup",
+        "publish": "npx tsup && npm publish"
     },
     "files": [
         "dist"

@@ -176,22 +176,28 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
 
         setFields();
 
-        var row = quickActionRow(...options.map(i => {
-            if (typeof i.default === "boolean") {
-                return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Toggle ${i.name.toLowerCase()}`).setStyle(i.default ? ButtonStyle.Success : ButtonStyle.Danger);
-            } else {
-                return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Set ${i.name.toLowerCase()}`).setStyle(ButtonStyle.Primary);
-            }
-        }));
+        const pages: ActionRowBuilder<ButtonBuilder>[] = [];
 
-        row.addComponents(new ButtonBuilder().setCustomId(doneId).setLabel("Done").setStyle(ButtonStyle.Secondary));
+        for (let i = 0; i < options.length; i += 5) {
+            const chunk = options.slice(i, i + 5);
+    
+            pages.push(quickActionRow(...chunk.map(i => {
+                if (typeof i.default === "boolean") {
+                    return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Toggle ${i.name.toLowerCase()}`).setStyle(i.default ? ButtonStyle.Success : ButtonStyle.Danger);
+                } else {
+                    return new ButtonBuilder().setCustomId(custom + i.name).setLabel(`Set ${i.name.toLowerCase()}`).setStyle(ButtonStyle.Primary);
+                }
+            })));
+        }
+
+        pages.push(quickActionRow(new ButtonBuilder().setCustomId(doneId).setLabel("Done").setStyle(ButtonStyle.Secondary)));
 
         if (int === undefined) {
-            message = await msg({ embeds: [embed], components: [row], ephemeral: true });
+            message = await msg({ embeds: [embed], components: pages, ephemeral: true });
         } else if (!int.replied) {
-            message = await int.update({ embeds: [embed], components: [row] });
+            message = await int.update({ embeds: [embed], components: pages });
         } else {
-            message = await int.editReply({ embeds: [embed], components: [row] });
+            message = await int.editReply({ embeds: [embed], components: pages });
         }
 
         try {
@@ -217,14 +223,14 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
                         i.default = val;
                         await i.on_change(i.default);
                         setFields();
-                        await int.editReply({ embeds: [embed], components: [row] });
+                        await int.editReply({ embeds: [embed], components: pages });
                     }, i.max ?? 2048, i.validate);
                 } else if (typeof i.default === "number") {
                     await cancelSafeQuickModal(`Set ${i.name.toLowerCase()}`, "Value", i.default.toString(), TextInputStyle.Short, int, async val => {
                         i.default = Number.parseFloat(val);
                         await i.on_change(i.default);
                         setFields();
-                        await int.editReply({ embeds: [embed], components: [row] });
+                        await int.editReply({ embeds: [embed], components: pages });
                     }, 15, str => i.validate(Number.parseFloat(str)));
                 }
 
