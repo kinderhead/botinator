@@ -1,4 +1,4 @@
-import { AnyComponentBuilder, APIActionRowComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionEditReplyOptions, InteractionResponse, MentionableSelectMenuBuilder, Message, MessageComponentInteraction, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder, APIButtonComponent } from "discord.js";
+import { AnyComponentBuilder, APIActionRowComponent, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, Channel, ChannelSelectMenuBuilder, ChannelSelectMenuInteraction, ChannelType, ChatInputCommandInteraction, ComponentType, EmbedBuilder, InteractionEditReplyOptions, InteractionResponse, MentionableSelectMenuBuilder, Message, MessageComponentInteraction, RoleSelectMenuBuilder, StringSelectMenuBuilder, UserSelectMenuBuilder, APIButtonComponent, StringSelectMenuInteraction } from "discord.js";
 import { createCustomId, quickActionRow } from "./utils.js";
 import { Loggable } from "./logutils.js";
 
@@ -67,14 +67,12 @@ export abstract class Selector<T extends SelectorTypes, TInt extends MessageComp
 
     public override async onInteraction(msg: MessageComponentInteraction): Promise<void> {
         if (this.typeSafeIsValidInteraction(msg)) {
-            await this.onSelect(msg, await this.getValues(msg));
-        } else {
-            throw new Error("Invalid interaction type");
+            await this.onSelect(msg, this.getValues(msg));
         }
     }
 
     public override isValidInteraction(msg: MessageComponentInteraction): boolean {
-        return this.typeSafeIsValidInteraction(msg);
+        return msg.customId == this.customId && this.typeSafeIsValidInteraction(msg);
     }
 
     protected abstract getSelect(): T;
@@ -112,6 +110,30 @@ export class ChannelSelector<T extends Channel> extends Selector<ChannelSelectMe
     }
 }
 
+export class StringSelector extends Selector<StringSelectMenuBuilder, StringSelectMenuInteraction, string> {
+    public readonly options: string[];
+    public selected: string[];
+
+    constructor(placeholder: string, onSelect: (msg: StringSelectMenuInteraction, objs: string[]) => any, min ?: number | null, max ?: number | null, options: string[] = [], selected: string[] = []) {
+        super(placeholder, onSelect, min, max);
+        this.options = options;
+        this.selected = selected;
+    }
+
+    protected getSelect() {
+        return new StringSelectMenuBuilder().addOptions(this.options.map(i => ({ label: i, value: i, default: this.selected.includes(i) })));
+    }
+
+    protected getValues(msg: StringSelectMenuInteraction<CacheType>): string[] {
+        this.selected = msg.values;
+        return msg.values;
+    }
+
+    protected typeSafeIsValidInteraction(msg: MessageComponentInteraction): msg is StringSelectMenuInteraction<CacheType> {
+        return msg.isStringSelectMenu();
+    }
+}
+
 export class Navigation {
     private readonly stack: Page[] = [];
     private readonly msg: ChatInputCommandInteraction;
@@ -120,33 +142,34 @@ export class Navigation {
         this.msg = msg;
     }
 
-    public async refresh(): Promise<void>;
-    public async refresh(int: MessageComponentInteraction): Promise<void>;
-    public async refresh(int?: MessageComponentInteraction) {
-        await this.navigate(this.stack[this.stack.length - 1], int);
+    public refresh(): void;
+    public refresh(int: MessageComponentInteraction): void;
+    public refresh(int?: MessageComponentInteraction) {
+        this.navigate(this.stack[this.stack.length - 1], int);
     }
 
-    public async back(): Promise<void>;
-    public async back(int: MessageComponentInteraction): Promise<void>;
-    public async back(int?: MessageComponentInteraction) {
+    public back(): void;
+    public back(int: MessageComponentInteraction): void;
+    public back(int?: MessageComponentInteraction) {
         this.stack.pop();
-        await this.navigate(this.stack[this.stack.length - 1], int);
+        this.navigate(this.stack[this.stack.length - 1], int);
     }
 
-    public async navigate(page: Page): Promise<void>;
-    public async navigate(page: Page, int: MessageComponentInteraction): Promise<void>;
-    public async navigate(page: Page, int?: MessageComponentInteraction) {
+    public navigate(page: Page): void;
+    public navigate(page: Page, int: MessageComponentInteraction): void;
+    public navigate(page: Page, int?: MessageComponentInteraction) {
         page.nav = this;
 
-        var newInt: Message | InteractionResponse;
+        var newInt: Promise<Message | InteractionResponse>;
         var buttons = page.getButtons();
         var extras = page.getExtras();
 
         if (this.stack[this.stack.length - 1] != page) this.stack.push(page);
         if (this.stack.length > 1) buttons = [new CustomButton("Back", ButtonStyle.Secondary, this.back.bind(this)), ...buttons];
 
+        var baseEmbed = page.getEmbed();
         var reply = {
-            embeds: [page.getEmbed()],
+            embeds: [baseEmbed],
             components: [
                 ...extras.map(i => quickActionRow(i.build()).toJSON())
             ] as APIActionRowComponent<APIButtonComponent>[]
@@ -155,39 +178,60 @@ export class Navigation {
         if (buttons.length > 5) throw new Error("More than 5 buttons have not been implemented yet");
 
         if (int === undefined) {
-            if (this.msg.replied || this.msg.deferred) newInt = await this.msg.editReply(reply);
-            else newInt = await this.msg.reply(reply);
-        } else newInt = await int.update(reply);
+            if (this.msg.replied || this.msg.deferred) newInt = this.msg.editReply(reply);
+            else newInt = this.msg.reply(reply);
+        }
+        else {
+            newInt = int.update(reply);
+            int.replied = true;
+        }
 
-        var collector = newInt.createMessageComponentCollector({ time: 30 * 60 * 1000, filter: i => i.user.id === this.msg.user.id });
-
-        collector.on("collect", async i => {
-            if (collector.ended) return;
-
-            if (i.isButton()) {
-                for (const e of buttons) {
-                    if (e.customId === i.customId) {
-                        await e.onClick(i);
-                        break;
-                    }
-                }
-            } else {
-                for (const e of extras) {
-                    if (e.isValidInteraction(i)) {
-                        await e.onInteraction(i);
-                        break;
-                    }
-                }
-            }
-
-            if (this.stack[this.stack.length - 1] != page) collector.stop();
-        });
-
-        collector.on("end", async () => {
+        newInt.then(async (newInt) => {
             try {
-                if (this.stack[this.stack.length - 1] == page) await this.msg.editReply({ embeds: reply.embeds, components: [] });
-            } catch {
+                var timer: NodeJS.Timeout | null = null;
 
+                if (page.useUpdater()) {
+                    timer = setInterval(async () => {
+                        try {
+                            var newEmbed = await page.updater();
+                            if (JSON.stringify(baseEmbed.toJSON()) != JSON.stringify(newEmbed.toJSON())) {
+                                await newInt.edit({ embeds: [newEmbed] });
+                            }
+                        } catch {
+                            clearInterval(timer);
+                        }
+                    }, 1000);
+                }
+
+                var i = await newInt.awaitMessageComponent({ time: 30 * 60 * 1000, filter: i => i.user.id === this.msg.user.id });
+                if (timer) clearInterval(timer);
+
+                if (i.isButton()) {
+                    for (const e of buttons) {
+                        if (e.customId === i.customId) {
+                            await e.onClick(i);
+                            break;
+                        }
+                    }
+                } else {
+                    for (const e of extras) {
+                        if (e.isValidInteraction(i)) {
+                            await e.onInteraction(i);
+                            break;
+                        }
+                    }
+                }
+
+                if (!i.replied) this.refresh(i);
+                else if (this.stack[this.stack.length - 1] == page) this.refresh();
+            }
+            catch {
+                // Timeout
+                try {
+                    if (this.stack[this.stack.length - 1] == page) await this.msg.editReply({ embeds: reply.embeds, components: [] });
+                } catch {
+
+                }
             }
         });
     }
@@ -208,5 +252,13 @@ export abstract class Page extends Loggable {
      */
     public getExtras(): ExtraElement[] {
         return [];
+    }
+
+    public useUpdater(): boolean {
+        return false;
+    }
+
+    public async updater(): Promise<EmbedBuilder> {
+        return this.getEmbed();
     }
 }
