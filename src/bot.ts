@@ -63,8 +63,8 @@ export abstract class Bot<TUser = GuildMember> {
                 this.logChannel.send(msg);
             }
 
-            if (LOG_CONFIG.LOGGER_STREAM != null) {
-                txt = txt.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+            if (LOG_CONFIG.LOGGER_STREAM != null && !txt.includes("DEBUG")) {
+                txt = txt.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "");
                 LOG_CONFIG.LOGGER_STREAM.write(txt + "\n");
             }
         }
