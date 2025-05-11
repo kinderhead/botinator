@@ -134,40 +134,79 @@ export class StringSelector extends Selector<StringSelectMenuBuilder, StringSele
     }
 }
 
+/**
+ * Navigation handler. Allows the bot to display complex widgets with pages, buttons, and other components.
+ * 
+ * @see {@link Page}
+ * 
+ * @example
+ * ```ts
+ * var nav = new Navigation(msg); // msg taken from something like a slash command. Doesn't matter if it's deferred or not.
+ * nav.navigate(new MyPage());
+ * ```
+ */
 export class Navigation {
     private readonly stack: Page[] = [];
     private readonly msg: ChatInputCommandInteraction;
+
+    public showBackButton = true;
 
     constructor(msg: ChatInputCommandInteraction) {
         this.msg = msg;
     }
 
+    /**
+     * Refreshes the current page.
+     */
     public refresh(): void;
+
+    /**
+     * Refreshes the current page.
+     * @param int Interaction to fulfill
+     */
     public refresh(int: MessageComponentInteraction): void;
     public refresh(int?: MessageComponentInteraction) {
         this.navigate(this.stack[this.stack.length - 1], int);
     }
 
+    /**
+     * Goes back to the previous page.
+     */
     public back(): void;
+
+    /**
+     * Goes back to the previous page.
+     * @param int Interaction to fulfill
+     */
     public back(int: MessageComponentInteraction): void;
     public back(int?: MessageComponentInteraction) {
         this.stack.pop();
         this.navigate(this.stack[this.stack.length - 1], int);
     }
 
+    /**
+     * Navigates to a new page.
+     * @param page Page to navigate to
+     */
     public navigate(page: Page): void;
+
+    /**
+     * Navigates to a new page.
+     * @param page Page to navigate to
+     * @param int Interaction to fulfill
+     */
     public navigate(page: Page, int: MessageComponentInteraction): void;
     public navigate(page: Page, int?: MessageComponentInteraction) {
         page.nav = this;
 
         var newInt: Promise<Message | InteractionResponse>;
+        var baseEmbed = page.getEmbed();
         var buttons = page.getButtons();
         var extras = page.getExtras();
 
         if (this.stack[this.stack.length - 1] != page) this.stack.push(page);
-        if (this.stack.length > 1) buttons = [new CustomButton("Back", ButtonStyle.Secondary, this.back.bind(this)), ...buttons];
+        if (this.stack.length > 1 && this.showBackButton) buttons = [new CustomButton("Back", ButtonStyle.Secondary, this.back.bind(this)), ...buttons];
 
-        var baseEmbed = page.getEmbed();
         var reply = {
             embeds: [baseEmbed],
             components: [
@@ -203,7 +242,18 @@ export class Navigation {
                     }, 1000);
                 }
 
-                var i = await newInt.awaitMessageComponent({ time: 30 * 60 * 1000, filter: i => i.user.id === this.msg.user.id });
+                var i = await newInt.awaitMessageComponent({
+                    time: 30 * 60 * 1000, filter: i => {
+                        for (const e of buttons) {
+                            if (e.customId === i.customId) return true;
+                        }
+                        for (const e of extras) {
+                            if (e.isValidInteraction(i)) return true;
+                        }
+                        return false;
+                    }
+                });
+
                 if (timer) clearInterval(timer);
 
                 if (i.isButton()) {
@@ -237,27 +287,41 @@ export class Navigation {
     }
 }
 
+/**
+ * Page class for {@link Navigation}. Subclass this to get started.
+ */
 export abstract class Page extends Loggable {
     public nav: Navigation;
 
+    /**
+     * Get the base embed for this page.
+     */
     public abstract getEmbed(): EmbedBuilder;
 
     /**
-     * Gets all the buttons this page uses
+     * Gets all the buttons this page uses.
      */
     public abstract getButtons(): CustomButton[];
 
     /**
-     * Gets all the extra message components this page uses
+     * Gets all the extra message components this page uses.
      */
     public getExtras(): ExtraElement[] {
         return [];
     }
 
+    /**
+     * Enable or disable the periodic updater for this page.
+     */
     public useUpdater(): boolean {
         return false;
     }
 
+    /**
+     * If enabled, this function will be called every second to update the embed.
+     * The message is only updated if the new embed is different from the previous one.
+     * @returns The updated embed.
+     */
     public async updater(): Promise<EmbedBuilder> {
         return this.getEmbed();
     }
