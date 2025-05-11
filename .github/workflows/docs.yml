@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
       - name: Build docs
-        run: npm install && npx typedoc
+        run: npm ci && npx typedoc
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
