@@ -243,12 +243,12 @@ export class Navigation {
                 }
 
                 var i = await newInt.awaitMessageComponent({
-                    time: 30 * 60 * 1000, filter: i => {
+                    time: 24 * 60 * 60 * 1000, filter: i => {
                         for (const e of buttons) {
                             if (e.customId === i.customId) return true;
                         }
                         for (const e of extras) {
-                            if (e.isValidInteraction(i)) return true;
+                            if (e.isValidInteraction(i)) return true;   
                         }
                         return false;
                     }
