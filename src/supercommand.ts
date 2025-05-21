@@ -133,11 +133,13 @@ export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<inf
 
         for (const i of args) {
             if (i.type === String) {
-                out.push(msg.options.getString(i.name));
+                out.push(msg.options.getString(i.name, i.required));
             } else if (i.type === Number) {
-                out.push(msg.options.getNumber(i.name));
+                out.push(msg.options.getNumber(i.name, i.required));
             } else {
-                out.push(this.bot.getUserV2(msg.options.getUser(i.name).id, msg.guildId));
+                var user = msg.options.getUser(i.name, i.required);
+                if (user) out.push(this.bot.getUserV2(user.id, msg.guildId));
+                else out.push(null);
             }
         }
 
