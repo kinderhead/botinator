@@ -28,7 +28,7 @@ export abstract class Bot<TUser = GuildMember> {
     public errorPing: Role;
 
     public components: Component<TUser, Bot<TUser>>[] = [];
-    public commands: Command<TUser, Bot<TUser>>[] = [];
+    public commands: Command<Bot<TUser>>[] = [];
 
     public hasStarted = false;
 
@@ -92,7 +92,7 @@ export abstract class Bot<TUser = GuildMember> {
      * 
      * @param command Command to register
      */
-    public registerCommand(command: Command<TUser, Bot<TUser>>) {
+    public registerCommand(command: Command<Bot<TUser>>) {
         this.commands.push(command);
     }
 

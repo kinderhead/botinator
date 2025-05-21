@@ -9,7 +9,7 @@ export type CommandBuilderTypes = SlashCommandBuilder | SlashCommandSubcommandsO
  * 
  * See {@link Bot.refreshCommands} for an example implementation.
  */
-export abstract class Command<TUser, TBot extends Bot<TUser>> extends Loggable {
+export abstract class Command<T extends Bot<any>, TUser = T extends Bot<infer U> ? U : never, TBot extends Bot<TUser> = T> extends Loggable {
     public readonly bot: TBot;
 
     /**

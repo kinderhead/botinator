@@ -67,7 +67,7 @@ export function cmd<T extends Function>(description: string) {
  * 
  * @alpha
  */
-export abstract class SuperCommand<TUser, TBot extends Bot<TUser>> extends Command<TUser, TBot> {
+export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<infer U> ? U : never, TBot extends Bot<TUser> = T> extends Command<TBot> {
     private cmdBuilder: SlashCommandBuilder;
     protected caller: TUser;
 
