@@ -1,4 +1,4 @@
-import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, roleMention } from "discord.js";
+import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, VoiceState, roleMention } from "discord.js";
 import util from 'node:util';
 import { RotatingFileStream, createStream } from "rotating-file-stream";
 import { ILogObj, Logger } from "tslog";
@@ -78,6 +78,7 @@ export abstract class Bot<TUser = GuildMember> {
         this.client.on(Events.GuildMemberAdd, this.onNewMember.bind(this));
         this.client.on(Events.GuildMemberRemove, this.onMemberLeave.bind(this));
         this.client.on(Events.GuildCreate, this.onGuildJoin.bind(this));
+        this.client.on(Events.VoiceStateUpdate, this.onUserVoiceStateUpdate.bind(this));
 
         this.client.on(Events.Error, e => { this.log.fatal(e); });
     }
@@ -184,6 +185,14 @@ export abstract class Bot<TUser = GuildMember> {
             }
         }
     }
+
+    /**
+     * Runs when a user's voice state changes. See discord.js documentation for more information.
+     * 
+     * @param oldState Old voice state
+     * @param newState New voice state
+     */
+    public async onUserVoiceStateUpdate(oldState: VoiceState, newState: VoiceState) { }
 
     /**
      * @beta
