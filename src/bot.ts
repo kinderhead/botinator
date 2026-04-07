@@ -1,4 +1,4 @@
-import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, VoiceState, roleMention } from "discord.js";
+import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, MessageFlags, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, VoiceState, roleMention } from "discord.js";
 import util from 'node:util';
 import { RotatingFileStream, createStream } from "rotating-file-stream";
 import { ILogObj, Logger } from "tslog";
