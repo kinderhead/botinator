@@ -177,7 +177,7 @@ export abstract class Bot<TUser = GuildMember> {
                     this.log.error(error);
                     try {
                         if (message.replied || message.deferred) await message.editReply("An error occured running this command");
-                        else await message.reply({ content: "An error occured running this command", ephemeral: true });
+                        else await message.reply({ content: "An error occured running this command", flags: MessageFlags.Ephemeral });
                     } catch (e) {
                         
                     }

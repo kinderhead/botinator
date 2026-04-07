@@ -193,7 +193,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
         pages.push(quickActionRow(new ButtonBuilder().setCustomId(doneId).setLabel("Done").setStyle(ButtonStyle.Secondary)));
 
         if (int === undefined) {
-            message = await msg({ embeds: [embed], components: pages, ephemeral: true });
+            message = await msg({ embeds: [embed], components: pages, flags: MessageFlags.Ephemeral });
         } else if (!int.replied) {
             message = await int.update({ embeds: [embed], components: pages });
         } else {
@@ -269,9 +269,9 @@ export async function quickModal(title: string, label: string, def: string, styl
         const res = await int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
         const str = res.fields.getTextInputValue(id);
 
-        if (validate(str)) res.deferReply({ ephemeral: true }).then(i => i.delete());
+        if (validate(str)) res.deferReply({ flags: MessageFlags.Ephemeral }).then(i => i.delete());
         else {
-            res.reply({ ephemeral: true, content: "Invalid format" });
+            res.reply({ flags: MessageFlags.Ephemeral, content: "Invalid format" });
             return def;
         }
         
@@ -315,11 +315,11 @@ export async function cancelSafeQuickModal(title: string, label: string, def: st
             const str = res.fields.getTextInputValue(id);
 
             if (validate(str)) {
-                res.deferReply({ ephemeral: true }).then(i => i.delete());
+                res.deferReply({ flags: MessageFlags.Ephemeral }).then(i => i.delete());
                 await callback(str === "" ? def : str);
             }
             else {
-                res.reply({ ephemeral: true, content: "Invalid format" });
+                res.reply({ flags: MessageFlags.Ephemeral, content: "Invalid format" });
                 await callback(def);
             }
         })();
@@ -364,7 +364,7 @@ export async function quickMultiModal(title: string, label1: string, def1: strin
         await int.showModal(modal);
 
         const res = await int.awaitModalSubmit({ time: 36000000, filter: i => i.customId === modalId });
-        res.deferReply({ ephemeral: true }).then(i => i.delete());
+        res.deferReply({ flags: MessageFlags.Ephemeral }).then(i => i.delete());
 
         const str1 = res.fields.getTextInputValue(id1);
         const str2 = res.fields.getTextInputValue(id2);
