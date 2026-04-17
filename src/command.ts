@@ -46,7 +46,7 @@ export abstract class Command<T extends Bot<any>, TUser = T extends Bot<infer U>
      * @param msg Command interaction
      * @param user User who ran it
      */
-    public abstract execute(msg: ChatInputCommandInteraction<CacheType>, user: TUser): Promise<void>;
+    public abstract execute(msg: ChatInputCommandInteraction<'cached'>, user: TUser): Promise<void>;
 
     /**
      * Runs when the command is run only if the command is run in a DM or in a server without the bot

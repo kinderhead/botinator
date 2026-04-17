@@ -1,4 +1,4 @@
-import { type Awaitable, ClientEvents, Events, GuildEmoji, GuildMember, Message, MessageReaction, PartialGuildMember, PartialMessage, PartialMessageReaction, PartialUser, User } from "discord.js";
+import { type Awaitable, ClientEvents, Events, GuildEmoji, GuildMember, Message, MessageReaction, type PartialGuildMember, type PartialMessage, type PartialMessageReaction, type PartialUser, User } from "discord.js";
 import "reflect-metadata";
 import { Bot } from "./bot.js";
 import { Loggable } from "./logutils.js";
@@ -17,7 +17,7 @@ export function name(type: Events) {
 /**
  * Adds functionality to bots.
  */
-export abstract class Component<TUser, TBot extends Bot<TUser>> extends Loggable {
+export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer U> ? U : never, TBot extends Bot<TUser> = T> extends Loggable {
     public readonly bot: TBot;
 
     public constructor(bot: TBot) {
@@ -27,7 +27,7 @@ export abstract class Component<TUser, TBot extends Bot<TUser>> extends Loggable
 
         const proto = Object.getPrototypeOf(this);
 
-        for (const i of Object.getOwnPropertyNames(proto) as (keyof Component<TUser, TBot>)[]) {
+        for (const i of Object.getOwnPropertyNames(proto) as (keyof Component<T>)[]) {
             const event: keyof ClientEvents = Reflect.getMetadata(typeKey, this, i);
 
             var obj = this[i];

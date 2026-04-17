@@ -1,6 +1,6 @@
 {
     "name": "discord-botinator",
-    "version": "0.2.13",
+    "version": "0.2.14",
     "description": "",
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
@@ -13,6 +13,14 @@
     "files": [
         "dist"
     ],
+    "exports": {
+        ".": [
+            { "import": "./src/index.ts" },
+            { "types": "./dist/index.d.ts" },
+            { "import": "./dist/index.mjs" },
+            { "import": "./dist/index.js" }
+        ]
+    },
     "author": "kinderhead",
     "license": "MIT",
     "repository": {

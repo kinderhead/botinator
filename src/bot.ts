@@ -1,4 +1,4 @@
-import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, MessageFlags, PartialGuildMember, Role, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder, TextChannel, VoiceState, roleMention } from "discord.js";
+import { Client, Events, Guild, GuildBasedChannel, GuildMember, Interaction, Message, MessageFlags, type PartialGuildMember, Role, TextChannel, VoiceState, roleMention } from "discord.js";
 import util from 'node:util';
 import { RotatingFileStream, createStream } from "rotating-file-stream";
 import { ILogObj, Logger } from "tslog";
@@ -18,7 +18,6 @@ export const DEBUG = process.argv.includes("--debug");
  * @typeParam TUser The default user object
  */
 export abstract class Bot<TUser = GuildMember> {
-    private clientID: string;
     private secret: string;
 
     public client: Client;
@@ -27,7 +26,7 @@ export abstract class Bot<TUser = GuildMember> {
     public logChannel: TextChannel;
     public errorPing: Role;
 
-    public components: Component<TUser, Bot<TUser>>[] = [];
+    public components: Component<Bot<TUser>>[] = [];
     public commands: Command<Bot<TUser>>[] = [];
 
     public hasStarted = false;
@@ -39,9 +38,8 @@ export abstract class Bot<TUser = GuildMember> {
      * @param secret Bot secret
      * @param client Base Discord client with intentions set
      */
-    public constructor(clientID: string, secret: string, client: Client) {
+    public constructor(secret: string, client: Client) {
         this.client = client;
-        this.clientID = clientID;
         this.secret = secret;
 
         // Me not like this

@@ -138,7 +138,7 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
 }
 
 /**
- * Setting utility type
+ * Setting utility type.
  * 
  * @see settingsHelper
  */
@@ -148,17 +148,16 @@ export type StringSettingsArg = SettingsArgType<string> & { max?: number };
 
 /**
  * @beta
- * A handy utility for users to change values. Only supports booleans and strings right now.
+ * A handy utility for users to change values. Only supports booleans and strings right now. Use `deferReply` or other similar function to make this ephemeral.
  * 
  * @param user User
  * @param msg Interaction
  * @param embed Base embed
  * @param options Options and callbacks
- * @param ephemeral Ephemeral or not
  * 
  * @see SettingsArgType
  */
-export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | StringSettingsArg | SettingsArgType<number>)[], ephemeral: boolean = true) {
+export async function settingsHelper(user: GuildMember, msg: InteractionSendable, embed: EmbedBuilder, options: (SettingsArgType<boolean> | StringSettingsArg | SettingsArgType<number>)[]) {
     var custom = createCustomId();
     var doneId = createCustomId();
 
@@ -192,7 +191,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
         pages.push(quickActionRow(new ButtonBuilder().setCustomId(doneId).setLabel("Done").setStyle(ButtonStyle.Secondary)));
 
         if (int === undefined) {
-            message = await msg({ embeds: [embed], components: pages, flags: MessageFlags.Ephemeral });
+            message = await msg({ embeds: [embed], components: pages });
         } else if (!int.replied) {
             message = await int.update({ embeds: [embed], components: pages });
         } else {
@@ -552,7 +551,7 @@ export var createCustomId = () => Math.random().toString();
  * msg.reply.bind(msg)
  * ```
  */
-export type InteractionSendable = ((content: string | MessagePayload | InteractionReplyOptions | InteractionEditReplyOptions) => Promise<InteractionResponse | Message>);
+export type InteractionSendable = ((content: string | MessagePayload | InteractionReplyOptions) => Promise<InteractionResponse | Message>) | ((content: string | MessagePayload | InteractionEditReplyOptions) => Promise<InteractionResponse | Message>);
 
 /**
  * Quick button.
