@@ -7,5 +7,13 @@
         "typedoc-plugin-djs-links",
         "typedoc-theme-hierarchy"
     ],
-    "theme": "hierarchy"
+    "theme": "hierarchy",
+    "exclude": [
+        "**/node_modules/**"
+    ],
+    "externalSymbolLinkMappings": {
+        "@discordjs/builders": {
+            "SlashCommandBuilder": "#"
+        }
+    }
 }
