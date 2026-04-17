@@ -84,12 +84,17 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
         .setStyle(ButtonStyle.Primary);
 
     const row = new ActionRowBuilder<ButtonBuilder>();
+    const rows = [row];
+    const extraRow = new ActionRowBuilder<ButtonBuilder>();
 
     if (pages.length >= 2) {
         row.addComponents(previous, next);
     }
 
-    row.addComponents(...additionalButtons);
+    if (additionalButtons.length > 0) {
+        extraRow.addComponents(...additionalButtons);
+        rows.push(extraRow);
+    }
 
     var reply: InteractionResponse | Message;
 
@@ -116,9 +121,9 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
                 pageIndex = ((pageIndex % pages.length) + pages.length) % pages.length;
 
                 if (i.replied) {
-                    i.editReply({ embeds: [pages[pageIndex]], components: [row] });
+                    i.editReply({ embeds: [pages[pageIndex]], components: rows });
                 } else {
-                    i.update({ embeds: [pages[pageIndex]], components: [row] });
+                    i.update({ embeds: [pages[pageIndex]], components: rows });
                 }
             }
         });
