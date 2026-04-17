@@ -1,4 +1,4 @@
-import { Awaitable, ClientEvents, Events, GuildEmoji, GuildMember, Message, MessageReaction, PartialGuildMember, PartialMessage, PartialMessageReaction, PartialUser, User } from "discord.js";
+import { type Awaitable, ClientEvents, Events, GuildEmoji, GuildMember, Message, MessageReaction, PartialGuildMember, PartialMessage, PartialMessageReaction, PartialUser, User } from "discord.js";
 import "reflect-metadata";
 import { Bot } from "./bot.js";
 import { Loggable } from "./logutils.js";
