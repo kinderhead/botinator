@@ -145,7 +145,8 @@ export class StringSelector extends Selector<StringSelectMenuBuilder, StringSele
  */
 export class Navigation {
     private readonly stack: Page[] = [];
-    private readonly msg: ChatInputCommandInteraction;
+    
+    public readonly msg: ChatInputCommandInteraction;
 
     public showBackButton = true;
 
