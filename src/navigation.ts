@@ -230,7 +230,8 @@ export class Navigation {
             else newInt = this.msg.reply(reply);
         }
         else {
-            newInt = int.update(reply);
+            if (int.replied) newInt = int.editReply(reply);
+            else newInt = int.update(reply);
             int.replied = true;
         }
 
