@@ -84,11 +84,12 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
         .setStyle(ButtonStyle.Primary);
 
     const row = new ActionRowBuilder<ButtonBuilder>();
-    const rows = [row];
+    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
     const extraRow = new ActionRowBuilder<ButtonBuilder>();
 
     if (pages.length >= 2) {
         row.addComponents(previous, next);
+        rows.push(row);
     }
 
     if (additionalButtons.length > 0) {
@@ -99,9 +100,9 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
     var reply: InteractionResponse | Message;
 
     if (pages.length == 0) {
-        reply = await msg({ content: content, components: row.data.components == undefined ? [] : [row], ephemeral: ephemeral });
+        reply = await msg({ content: content, components: rows, ephemeral: ephemeral });
     } else {
-        reply = await msg({ content: content, embeds: [pages[0]], components: row.components.length > 0 ? [row] : [], ephemeral: ephemeral });
+        reply = await msg({ content: content, embeds: [pages[0]], components: rows, ephemeral: ephemeral });
     }
 
     const collector = reply.createMessageComponentCollector({ componentType: ComponentType.Button, time: 300000 });
