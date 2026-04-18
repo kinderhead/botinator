@@ -110,7 +110,7 @@ export abstract class Bot<TUser = GuildMember> {
      */
     public async run() {
         for (const i of this.components) {
-            i.setup(this);
+            i._setup(this);
         }
         
         this.init();

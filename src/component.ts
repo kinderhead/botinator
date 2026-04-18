@@ -21,9 +21,9 @@ export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer 
     public readonly bot!: TBot;
 
     /**
-     * Sets up the component.
+     * @internal
      */
-    public setup(bot: TBot) {
+    public _setup(bot: TBot) {
         (this as any)["bot"] = bot;
 
         const proto = Object.getPrototypeOf(this);
@@ -36,7 +36,14 @@ export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer 
                 this.bot.client.on(event, obj.bind(this) as any);
             }
         }
+
+        this.setup(bot);
     }
+
+    /**
+     * Sets up the component.
+     */
+    public setup(bot: TBot) { };
 
     /**
      * Called on bot login.
