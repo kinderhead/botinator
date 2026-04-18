@@ -100,7 +100,7 @@ export abstract class Bot<TUser = GuildMember> {
      * 
      * @param components Component to register
      */
-    public registerComponent(component: Component<Bot<TUser>>) {
+    public registerComponent<T extends Component<Bot<TUser>>>(component: T) {
         this.components.push(component);
         return component;
     }
@@ -132,7 +132,7 @@ export abstract class Bot<TUser = GuildMember> {
         this.log.silly("Bot in " + this.client.guilds.cache.size + " servers");
 
         for (const i of this.components) {
-            i.init();
+            await i.onLogin();
         }
 
         this.hasStarted = true;

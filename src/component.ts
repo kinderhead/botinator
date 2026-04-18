@@ -22,7 +22,6 @@ export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer 
 
     /**
      * Sets up the component.
-     * @internal
      */
     public setup(bot: TBot) {
         (this as any)["bot"] = bot;
@@ -42,7 +41,7 @@ export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer 
     /**
      * Called on bot login.
      */
-    public init(): Awaitable<void> { };
+    public onLogin(): Awaitable<void> { };
 
     @name(Events.MessageCreate)
     public onMessage(msg: Message): Awaitable<void> { };
