@@ -10,7 +10,8 @@
         "inlineSourceMap": true,
         "strict": true,
         "declaration": true,
-        "stripInternal": true
+        "stripInternal": true,
+        "noImplicitOverride": true
     },
     "lib": [
         "ES2020"

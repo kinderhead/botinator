@@ -6,3 +6,4 @@ export * from "./supercommand.js";
 export * from "./utils.js";
 export * from "./mapper.js";
 export * from "./navigation.js";
+export * from "./pages/embedPager.js";

@@ -3,15 +3,9 @@ import { createCustomId, quickActionRow } from "./utils.js";
 import { Loggable } from "./logutils.js";
 
 export class CustomButton {
-    public readonly label: string;
-    public readonly style: ButtonStyle;
-    public readonly onClick: (msg: ButtonInteraction) => any;
     public readonly customId = createCustomId();
 
-    constructor(label: string, style: ButtonStyle, onClick: (msg: ButtonInteraction) => Promise<void> | void) {
-        this.label = label;
-        this.style = style;
-        this.onClick = onClick;
+    constructor(public label: string, public style: ButtonStyle, public onClick: (msg: ButtonInteraction, button: CustomButton) => Promise<void> | void) {
     }
 
     public build() {
@@ -71,6 +65,10 @@ export abstract class Selector<T extends SelectorTypes, TInt extends MessageComp
         }
     }
 
+    /**
+     * Override {@link typeSafeIsValidInteraction} instead.
+     * @param msg Interaction
+     */
     public override isValidInteraction(msg: MessageComponentInteraction): boolean {
         return msg.customId == this.customId && this.typeSafeIsValidInteraction(msg);
     }
@@ -79,7 +77,7 @@ export abstract class Selector<T extends SelectorTypes, TInt extends MessageComp
     protected abstract getValues(msg: TInt): TRet[];
 
     /**
-     * Typesafe version of {@link isValidInteraction}. Override this method instead;
+     * Typesafe version of {@link isValidInteraction}. Override this method instead.
      * @param msg Interaction
      */
     protected abstract typeSafeIsValidInteraction(msg: MessageComponentInteraction): msg is TInt;
@@ -259,7 +257,7 @@ export class Navigation {
                 if (i.isButton()) {
                     for (const e of buttons) {
                         if (e.customId === i.customId) {
-                            await e.onClick(i);
+                            await e.onClick(i, e);
                             break;
                         }
                     }

@@ -58,7 +58,8 @@ export function escapeMarkdown(text: string) {
 }
 
 /**
- * Allows for embeds to be arranged in a list for users to sift through.
+ * Allows for embeds to be arranged in a list for users to sift through. Use {@link import('./pages/embedPager.js').EmbedPager} instead.
+ * @deprecated
  * 
  * @param pages Embeds
  * @param msg Interaction
