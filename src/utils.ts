@@ -109,8 +109,6 @@ export async function embedPager(pages: EmbedBuilder[], msg: InteractionSendable
 
     await new Promise<void>(res => {
         collector.on("collect", async i => {
-            await i.deferReply();
-
             if (i.customId == nextId) pageIndex++;
             else if (i.customId == prevId) pageIndex--;
             else if (i.customId in callbacks) {
