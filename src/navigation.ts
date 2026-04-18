@@ -2,14 +2,24 @@ import { AnyComponentBuilder, APIActionRowComponent, ButtonBuilder, ButtonIntera
 import { createCustomId, quickActionRow } from "./utils.js";
 import { Loggable } from "./logutils.js";
 
+export interface CustomButtonInitializer<T extends Page> {
+    label: string;
+    style: ButtonStyle;
+    onClick: (msg: ButtonInteraction, button: CustomButton, page: T) => Promise<void> | void
+}
+
 export class CustomButton {
     public readonly customId = createCustomId();
 
-    constructor(public label: string, public style: ButtonStyle, public onClick: (msg: ButtonInteraction, button: CustomButton) => Promise<void> | void) {
+    constructor(public label: string, public style: ButtonStyle, public onClick: (msg: ButtonInteraction, button: CustomButton, page: Page) => Promise<void> | void) {
     }
 
     public build() {
         return new ButtonBuilder().setLabel(this.label).setStyle(this.style).setCustomId(this.customId);
+    }
+
+    public static from<T extends Page>(init: CustomButtonInitializer<T>) {
+        return new CustomButton(init.label, init.style, init.onClick as CustomButton["onClick"]);
     }
 }
 
@@ -255,20 +265,25 @@ export class Navigation {
 
                 if (timer) clearInterval(timer);
 
-                if (i.isButton()) {
-                    for (const e of buttons) {
-                        if (e.customId === i.customId) {
-                            await e.onClick(i, e);
-                            break;
+                try {
+                    if (i.isButton()) {
+                        for (const e of buttons) {
+                            if (e.customId === i.customId) {
+                                await e.onClick(i, e, page);
+                                break;
+                            }
+                        }
+                    } else {
+                        for (const e of extras) {
+                            if (e.isValidInteraction(i)) {
+                                await e.onInteraction(i);
+                                break;
+                            }
                         }
                     }
-                } else {
-                    for (const e of extras) {
-                        if (e.isValidInteraction(i)) {
-                            await e.onInteraction(i);
-                            break;
-                        }
-                    }
+                } catch (e) {
+                    page.log.error(e);
+                    await this.msg.editReply("An error has occurred");
                 }
 
                 if (!i.replied) this.refresh(i);

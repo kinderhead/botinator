@@ -1,12 +1,14 @@
 import { ButtonStyle, EmbedBuilder } from "discord.js";
-import { CustomButton, Page } from "../navigation.js";
+import { CustomButton, CustomButtonInitializer, Page } from "../navigation.js";
 
 export class EmbedPager extends Page {
+    public additionalButtons: CustomButton[];
     public index = 0;
     public wrap = false;
 
-    constructor(public embeds: EmbedBuilder[], public additionalButtons: CustomButton[]) {
+    constructor(public embeds: EmbedBuilder[], additionalButtons: CustomButtonInitializer<EmbedPager>[]) {
         super();
+        this.additionalButtons = additionalButtons.map(i => CustomButton.from(i));
     }
 
     public override getEmbed(): EmbedBuilder {
