@@ -195,8 +195,8 @@ export class Navigation {
      * @param page Page to navigate to
      * @param int Interaction to fulfill
      */
-    public navigate(page: Page, int: MessageComponentInteraction): void;
-    public navigate(page: Page, int?: MessageComponentInteraction) {
+    public navigate(page: Page, int: MessageComponentInteraction | undefined): void;
+    public navigate(page: Page, int?: MessageComponentInteraction | undefined) {
         page.nav = this;
 
         var newInt: Promise<Message | InteractionResponse>;
@@ -237,7 +237,7 @@ export class Navigation {
                                 await newInt.edit({ embeds: [newEmbed] });
                             }
                         } catch {
-                            clearInterval(timer);
+                            clearInterval(timer!);
                         }
                     }, 1000);
                 }
@@ -291,7 +291,7 @@ export class Navigation {
  * Page class for {@link Navigation}. Subclass this to get started.
  */
 export abstract class Page extends Loggable {
-    public nav: Navigation;
+    public nav!: Navigation;
 
     /**
      * Get the base embed for this page.

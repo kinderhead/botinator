@@ -11,7 +11,8 @@
         "publish": "node publish.js"
     },
     "files": [
-        "dist"
+        "dist",
+        "src"
     ],
     "exports": {
         ".": [

@@ -26,7 +26,7 @@ const argsKey = Symbol("args");
 export function param(description: string, required: boolean = true) {
     return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
         var argData: SuperCommandArg[] = Reflect.getOwnMetadata(argsKey, target, propertyKey) || [];
-        const args = getFunctionArgs(target[propertyKey] as Function);
+        const args = getFunctionArgs(target[propertyKey] as Function)!;
         argData.push({ index: parameterIndex, description, required, name: args[parameterIndex], type: Reflect.getMetadata("design:paramtypes", target, propertyKey)[parameterIndex] });
         Reflect.defineMetadata(argsKey, argData, target, propertyKey);
     };
@@ -35,7 +35,7 @@ export function param(description: string, required: boolean = true) {
 export function numberParam(description: string, min: number, max: number, required: boolean = true) {
     return (target: any, propertyKey: string | symbol, parameterIndex: number) => {
         var argData: SuperCommandArg[] = Reflect.getOwnMetadata(argsKey, target, propertyKey) || [];
-        const args = getFunctionArgs(target[propertyKey] as Function);
+        const args = getFunctionArgs(target[propertyKey] as Function)!;
         if (Reflect.getMetadata("design:paramtypes", target, propertyKey)[parameterIndex] != Number) throw new TypeError("Argument is not of type number");
         argData.push({ index: parameterIndex, description, required, name: args[parameterIndex], type: Number, min, max });
         Reflect.defineMetadata(argsKey, argData, target, propertyKey);
@@ -49,7 +49,7 @@ export function cmd<T extends Function>(description: string) {
 
         var argData: SuperCommandArg[] = Reflect.getOwnMetadata(argsKey, target, propertyName) || [];
 
-        if (argData.length + 1 != getFunctionArgs((target as any)[propertyName] as Function).length) throw new Error(`Command route for ${target.constructor.name} has mismatching number of arguments`);
+        if (argData.length + 1 != getFunctionArgs((target as any)[propertyName] as Function)!.length) throw new Error(`Command route for ${target.constructor.name} has mismatching number of arguments`);
         argData.reverse();
         var routes: SuperCommandRoute[] = Reflect.getOwnMetadata(routeKey, target) || [];
         routes.push({ args: argData, func: method, name: propertyName, description });
@@ -64,12 +64,15 @@ export function cmd<T extends Function>(description: string) {
 
 /**
  * Another way to create commands.
+ * Currently supported argument types: `string`, `number`, user.
+ * 
+ * Requires `"emitDecoratorMetadata": true` and `"experimentalDecorators": true` in `tsconfig.json`.
  * 
  * @alpha
  */
 export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<infer U> ? U : never, TBot extends Bot<TUser> = T> extends Command<TBot> {
-    private cmdBuilder: SlashCommandBuilder;
-    protected caller: TUser;
+    private cmdBuilder!: SlashCommandBuilder;
+    protected caller!: TUser;
 
     public routes: SuperCommandRoute[] = [];
 
@@ -86,7 +89,12 @@ export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<inf
             if (i.type === String) {
                 cmd.addStringOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required));
             } else if (i.type === Number) {
-                cmd.addNumberOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required).setMinValue(i.min).setMaxValue(i.max));
+                cmd.addNumberOption(opt => {
+                    opt.setName(i.name).setDescription(i.description).setRequired(i.required);
+                    if (i.min !== undefined) opt.setMinValue(i.min);
+                    if (i.max !== undefined) opt.setMaxValue(i.max);
+                    return opt;
+                });
             } else {
                 cmd.addUserOption(opt => opt.setName(i.name).setDescription(i.description).setRequired(i.required));
             }
@@ -118,7 +126,7 @@ export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<inf
         return this.cmdBuilder;
     }
 
-    public async execute(msg: ChatInputCommandInteraction<CacheType>) {
+    public async execute(msg: ChatInputCommandInteraction<'cached'>) {
         var subcmd = msg.options.getSubcommand(false) || "default";
 
         const route = this.routes.find(i => i.name === subcmd);
@@ -128,7 +136,7 @@ export abstract class SuperCommand<T extends Bot<any>, TUser = T extends Bot<inf
         }
     }
 
-    private processArgs(msg: ChatInputCommandInteraction<CacheType>, args: SuperCommandArg[]) {
+    private processArgs(msg: ChatInputCommandInteraction<'cached'>, args: SuperCommandArg[]) {
         var out: any[] = [];
 
         for (const i of args) {

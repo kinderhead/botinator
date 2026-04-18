@@ -9,8 +9,8 @@
         "experimentalDecorators": true,
         "inlineSourceMap": true,
         "strict": true,
-        "strictNullChecks": false,
-        "declaration": true
+        "declaration": true,
+        "stripInternal": true
     },
     "lib": [
         "ES2020"

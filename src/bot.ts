@@ -7,7 +7,7 @@ import { Command, CommandBuilderTypes } from "./command.js";
 
 export const LOG_CONFIG = {
     DEFAULT_LOGGER: new Logger<ILogObj>({ name: "Bot", type: "pretty", hideLogPositionForProduction: false, prettyLogTimeZone: "local", minLevel: 2, prettyLogTemplate: "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}} {{fileNameWithLine}}\t{{logLevelName}}\t[{{name}}] " }),
-    LOGGER_STREAM: null as RotatingFileStream
+    LOGGER_STREAM: null as unknown as RotatingFileStream
 }
 
 export const DEBUG = process.argv.includes("--debug");
@@ -23,8 +23,8 @@ export abstract class Bot<TUser = GuildMember> {
     public client: Client;
 
     public readonly log = LOG_CONFIG.DEFAULT_LOGGER;
-    public logChannel: TextChannel;
-    public errorPing: Role;
+    public logChannel!: TextChannel;
+    public errorPing!: Role;
 
     public components: Component<Bot<TUser>>[] = [];
     public commands: Command<Bot<TUser>>[] = [];
@@ -87,18 +87,32 @@ export abstract class Bot<TUser = GuildMember> {
     protected abstract init(): void;
 
     /**
-     * Register a command.
+     * Register commands.
      * 
-     * @param command Command to register
+     * @param command Commands to register
      */
-    public registerCommand(command: Command<Bot<TUser>>) {
-        this.commands.push(command);
+    public registerCommand(...command: Command<Bot<TUser>>[]) {
+        this.commands.push(...command);
+    }
+
+    /**
+     * Register a component.
+     * 
+     * @param components Component to register
+     */
+    public registerComponent(component: Component<Bot<TUser>>) {
+        this.components.push(component);
+        return component;
     }
 
     /**
      * Start the bot.
      */
     public async run() {
+        for (const i of this.components) {
+            i.setup(this);
+        }
+        
         this.init();
 
         try {
@@ -240,6 +254,10 @@ export abstract class Bot<TUser = GuildMember> {
             if (i.globalCommand()) globalCmds.push(i.create());
         });
 
+        if (!this.client.application) {
+            throw new Error("Cannot refresh commands: missing application (somehow?)");
+        }
+
         await this.client.application.commands.set(globalCmds);
 
         this.client.guilds.cache.forEach(async i => {
@@ -292,7 +310,7 @@ export abstract class Bot<TUser = GuildMember> {
     public getRole(id: string): Role {
         for (const i of this.client.guilds.cache.values()) {
             if (i.roles.cache.has(id)) {
-                return i.roles.cache.get(id);
+                return i.roles.cache.get(id)!;
             }
         }
 

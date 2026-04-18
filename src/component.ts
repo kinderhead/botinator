@@ -18,12 +18,14 @@ export function name(type: Events) {
  * Adds functionality to bots.
  */
 export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer U> ? U : never, TBot extends Bot<TUser> = T> extends Loggable {
-    public readonly bot: TBot;
+    public readonly bot!: TBot;
 
-    public constructor(bot: TBot) {
-        super();
-
-        this.bot = bot;
+    /**
+     * Sets up the component.
+     * @internal
+     */
+    public setup(bot: TBot) {
+        (this as any)["bot"] = bot;
 
         const proto = Object.getPrototypeOf(this);
 
@@ -36,14 +38,6 @@ export abstract class Component<T extends Bot<any>, TUser = T extends Bot<infer 
             }
         }
     }
-
-    /**
-     * Refreshes datamaps.
-     * @experimental
-     * 
-     * @see DataMapper
-     */
-    public async refreshDatamaps() { };
 
     /**
      * Called on bot login.

@@ -166,8 +166,8 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
     var custom = createCustomId();
     var doneId = createCustomId();
 
-    var int: ButtonInteraction = undefined;
-    var message: InteractionResponse | Message = undefined;
+    var int: ButtonInteraction = undefined!;
+    var message: InteractionResponse | Message = undefined!;
 
     while (true) {
         function setFields()
@@ -217,6 +217,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
         }
 
         for (const i of options) {
+            i.validate ??= () => true;
             if (int.customId === custom + i.name) {
                 if (typeof i.default === "boolean") {
                     i.default = !i.default;
@@ -234,7 +235,7 @@ export async function settingsHelper(user: GuildMember, msg: InteractionSendable
                         await i.on_change(i.default);
                         setFields();
                         await int.editReply({ embeds: [embed], components: pages });
-                    }, 15, str => i.validate(Number.parseFloat(str)));
+                    }, 15, str => i.validate!(Number.parseFloat(str)));
                 }
 
                 break;
